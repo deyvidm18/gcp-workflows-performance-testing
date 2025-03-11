@@ -1,0 +1,122 @@
+main:
+  steps:
+    - init:
+        assign:
+          - validation_curp: [
+            "ABCD230515HMASJKL1",
+            "EFGH981122MCQRS2",
+            "IJKL010307VZTUV3",
+            "MNOP850730BCWXY4",
+            "QRST720918CHZAB5",
+            "UVWX691201DGCD6",
+            "YZAB560228GRFE7",
+            "CDEF430614HGIH8",
+            "GHIJ301025JIKJ9",
+            "KLMN170411LMLK0",
+            "ABCD123232HMASBCD1",
+            "ABCD123232HMASBCD1",
+            "ABCD231212HMZZBCD1",
+            "ABCD231212HMZZBCD1",
+            "ABCD231212XMASBCD1",
+            "ABCD231312HMASBCD1",
+            "ABCD231232HMASBCD1",
+            "ABCD231312HMASBCD1",
+            "ABCD231312HMASBCD1",
+            "ABCD231212XMASBCD1"
+            ]
+          - validation_rfc: [
+            "AAA010101AAA",
+            "BBB980228BBB",
+            "CCC850315CCC",
+            "DDD720430DDD",
+            "EEE690518EEE",
+            "FFF560601FFF",
+            "GGG430714GGG",
+            "HHH300825HHH",
+            "III170911III",
+            "JJJ041022JJJ",
+            "AAAA000000AAA",
+            "AAAA130101AAA",
+            "AAAA013201AAA",
+            "AAAA010101AAAA",
+            "AAAA010101AA",
+            "AAAA010101A",
+            "AAAA010101AAAAA",
+            "AAAA010101A1A1",
+            "AAAA010101A!A",
+            "AAAA010101A A"
+            ]
+          - validation_dates: [
+            "19/05/1989",
+            "01/12/2002",
+            "22/01/2009",
+            "15/12/1992",
+            "18/09/1967",
+            "19/05/1989",
+            "01/12/2002",
+            "22/01/2009",
+            "15/12/1992",
+            "18/09/1967",
+            "99/00/1999",
+            "33/01/1989",
+            "01/02/03",
+            "01/13/2005",
+            "00/00/0000",
+            "99/00/1999",
+            "33/01/1989",
+            "01/02/03",
+            "01/13/2005",
+            "00/00/0000"
+            ]
+          - result_curp: []
+          - result_rfc: []
+          - result_dates: []
+          - project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+          - collection: "regex"
+    - get_curp_regex:
+        call: googleapis.firestore.v1.projects.databases.documents.get
+        args:
+          name: ${"projects/" + project_id + "/databases/(default)/documents/" + collection + "/CURP"}
+        result: curp_regex_response
+    - get_rfc_regex:
+        call: googleapis.firestore.v1.projects.databases.documents.get
+        args:
+          name: ${"projects/" + project_id + "/databases/(default)/documents/" + collection + "/RFC"}
+        result: rfc_regex_response
+    - get_date_regex:
+        call: googleapis.firestore.v1.projects.databases.documents.get
+        args:
+          name: ${"projects/" + project_id + "/databases/(default)/documents/" + collection + "/DATE"}
+        result: date_regex_response
+    - Check_CURP:
+        for:
+          value: v
+          range: [0, 19]
+          steps:
+            - executeRegexCurp:
+                assign:
+                  - match_result: ${text.match_regex(validation_curp[v], curp_regex_response.fields.pattern.stringValue)}
+                  - result_curp: ${list.concat(result_curp, [if(match_result, "OK", "INVALID")])}
+    - Check_RFC:
+        for:
+          value: v
+          range: [0, 19]
+          steps:
+            - executeRegexRFC:
+                assign:
+                  - match_result: ${text.match_regex(validation_rfc[v], rfc_regex_response.fields.pattern.stringValue)}
+                  - result_rfc: ${list.concat(result_rfc, [if(match_result, "OK", "INVALID")])}
+    - Check_Date:
+        for:
+          value: v
+          range: [0, 19]
+          steps:
+            - executeRegexDate:
+                assign:
+                  - match_result: ${text.match_regex(validation_dates[v], date_regex_response.fields.pattern.stringValue)}
+                  - result_dates: ${list.concat(result_dates, [if(match_result, "OK", "INVALID")])}
+    - final:
+        return:
+          result_curp: ${result_curp}
+          result_rfc: ${result_rfc}
+          result_dates: ${result_dates}
