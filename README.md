@@ -91,6 +91,15 @@ The script will output the following information for each concurrency level:
 *   Elapsed time for all executions.
 *   Total results: number of workflows executed.
 
+## Considerations
+
+* The script will execute the workflow defined by the enviroment variable: `WORKFLOW`.
+* You should change the `PROJECT` and `LOCATION` in the `app.py` if needed.
+* The Firestore collection is defined by: `regex`.
+* The regex values are defined by this document: `CURP, RFC and DATE`.
+* The validation document is: `VALIDATION`.
+* Remember to populate the firestore collection before running the tests.
+
 ## Results
 
 The performance tests were conducted using Google Cloud's `northamerica-south1` (Mexico) region for both Firestore and Workflows. A dedicated Service Account was created and used to execute the workflows.
@@ -107,15 +116,6 @@ The tests were executed with different concurrency levels for both workflows.
 *   Slowest individual execution (likely the first one, indicating a cold start): **0.405 seconds**.
 
 ![HLA](images/results.png)
-
-## Considerations
-
-* The script will execute the workflow defined by the enviroment variable: `WORKFLOW`.
-* You should change the `PROJECT` and `LOCATION` in the `app.py` if needed.
-* The Firestore collection is defined by: `regex`.
-* The regex values are defined by this document: `CURP, RFC and DATE`.
-* The validation document is: `VALIDATION`.
-* Remember to populate the firestore collection before running the tests.
 
 ## Conclusions
 
