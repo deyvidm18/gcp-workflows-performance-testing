@@ -1,0 +1,41 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - clientId: ${args.clientId}
+    - check_input:
+        switch:
+          - condition: ${clientId == null}
+            next: missing_input
+          - condition: ${get_type(clientId) != "integer"}
+            next: invalid_input
+        next: call_cloudrun
+    - missing_input:
+        raise:
+          error:
+            message: "Missing clientId input parameter."
+    - invalid_input:
+        raise:
+          error:
+            message: ${"Invalid clientId input parameter. Must be a number. Got " + get_type(clientId) + " instead."}
+    - call_cloudrun:
+        call: http.post
+        args:
+          url: ${"https://db-service-106776085743.northamerica-south1.run.app/update_client/" + clientId} # Replace with your Cloud Run service URL
+          body: {} # No body needed
+          auth:
+            type: OIDC
+        result: cloudrun_response
+    - check_cloudrun_response:
+        switch:
+          - condition: ${cloudrun_response.code != 200}
+            next: cloudrun_error
+        next: success
+    - cloudrun_error:
+        raise:
+          error:
+            message: "Cloud Run service returned error:"
+    - success:
+        return:
+          message: "Successfully called Cloud Run service."

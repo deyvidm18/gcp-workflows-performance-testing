@@ -1,0 +1,54 @@
+main:
+  params: [args]
+  steps:
+    - init:
+        assign:
+          - clientId: ${args.clientId}
+    - check_input:
+        switch:
+          - condition: ${clientId == null}
+            next: missing_input
+          - condition: ${get_type(clientId) != "integer"}
+            next: invalid_input
+        next: query_bigquery
+    - missing_input:
+        raise:
+          error:
+            message: "Missing clientId input parameter."
+    - invalid_input:
+        raise:
+          error:
+            message: ${"Invalid clientId input parameter. Must be a number. Got " + get_type(clientId) + " instead."}
+    - query_bigquery:
+        call: googleapis.bigquery.v2.jobs.query
+        args:
+          projectId: ${sys.get_env("PROJECT_ID")}
+          body:
+            query: ${"SELECT accountNumber FROM `" + sys.get_env("PROJECT_ID") + "." + sys.get_env("DATASET_ID") + "." + sys.get_env("TABLE_ID") + "` WHERE clientId = " + string(clientId)}
+            useLegacySql: false
+        result: query_result
+    - check_query_result:
+        switch:
+          - condition: ${len(query_result.rows) == 0}
+            next: client_not_found
+        next: transform_account_number
+    - client_not_found:
+        raise:
+          error:
+            message: ${"Client with ID " + string(clientId) + " not found."}
+    - transform_account_number:
+        assign:
+          - account_number: ${query_result.rows[0].f[0].v}
+          - base64_value: ${base64.encode(text.encode(account_number,"UTF-8"))}
+    - update_bigquery:
+        call: googleapis.bigquery.v2.jobs.query
+        args:
+          projectId: ${sys.get_env("PROJECT_ID")}
+          body:
+            query: ${"UPDATE `" + sys.get_env("PROJECT_ID") + "." + sys.get_env("DATASET_ID") + "." + sys.get_env("TABLE_ID") + "` SET base64 = '" + base64_value + "' WHERE clientId = " + string(clientId)}
+            useLegacySql: false
+        result: update_result
+    - final:
+        return:
+          message: ${"Successfully updated base64 for clientId:" + string(clientId)}
+          base64: ${base64_value}
