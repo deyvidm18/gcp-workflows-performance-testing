@@ -25,6 +25,7 @@ gcloud run deploy $SERVICE_NAME \
   --ingress internal \
   --no-allow-unauthenticated \
   --cpu-boost \
+  --min 1
   --min-instances 5 \
   --max-instances 25
 

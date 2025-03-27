@@ -6,9 +6,9 @@ from google.cloud import workflows_v1
 from google.cloud.workflows import executions_v1
 from google.cloud.workflows.executions_v1.types import Execution
 
-PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")  # Change to your Google Cloud Project ID
-LOCATION = os.getenv("LOCATION", "northamerica-south1")  # Change to your location
-WORKFLOW_ID = "workflow-alloydb"  # Change to your workflow name
+PROJECT = os.getenv("GOOGLE_CLOUD_PROJECT")
+LOCATION = os.getenv("LOCATION", "northamerica-south1")  
+WORKFLOW_ID = "workflow-alloydb-run"  
 
 
 def execute_workflow(project: str, location: str, workflow: str, client_id: int) -> Execution:
